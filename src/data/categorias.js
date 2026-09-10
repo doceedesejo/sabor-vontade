@@ -25,7 +25,7 @@ export const categorias = [
   {
     id: 'acai',
     ordem: 2,
-    ativa: true,
+    ativa: false, // desativado temporariamente — trocar para true quando reativar
     nome: '+Ki Açaí',
     marca: '+Ki Açaí',
     eyebrow: 'AÇAÍ PREMIUM',
