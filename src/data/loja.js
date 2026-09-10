@@ -4,5 +4,5 @@
 // ajuste `whatsappService.js` para escolher o número pela categoria do item.
 export const loja = {
   nome: 'Sabor & Vontade',
-  whatsapp: '5599985503978',
+  whatsapp: '5599984195290',
 }
