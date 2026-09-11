@@ -1,7 +1,13 @@
 import './ProdutoCard.css'
 
+function urlDaFoto(foto) {
+  return typeof foto === 'string' ? foto : foto?.url
+}
+
 function ProdutoCard({ bolo, onVerDetalhes, onAdicionar }) {
-  const foto = Array.isArray(bolo.fotos) ? bolo.fotos[0] : bolo.fotoUrl
+  const foto = Array.isArray(bolo.fotos) && bolo.fotos.length > 0
+    ? urlDaFoto(bolo.fotos[0])
+    : bolo.fotoUrl
   const isEncomenda = bolo.categorias.includes('encomenda')
   const totalFotos = bolo.fotos?.length ?? 0
 

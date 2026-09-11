@@ -1,4 +1,4 @@
-import { WHATSAPP_BOLOS } from '../data/bolos'
+const WHATSAPP_BOLOS = '5599984195290'
 
 function fmt(v) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })

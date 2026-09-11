@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { getLinkEncomenda } from '../../services/whatsappBolos'
 import './ModalProduto.css'
 
+function urlDaFoto(foto) {
+  return typeof foto === 'string' ? foto : foto?.url
+}
+
 function ModalProduto({ bolo, onFechar, onAdicionar }) {
   const [fotoAtual, setFotoAtual] = useState(0)
   const [obs, setObs] = useState('')
@@ -15,7 +19,10 @@ function ModalProduto({ bolo, onFechar, onAdicionar }) {
 
   if (!bolo) return null
 
-  const fotos = Array.isArray(bolo.fotos) ? bolo.fotos : [bolo.fotoUrl]
+  const fotos = (Array.isArray(bolo.fotos) && bolo.fotos.length > 0
+    ? bolo.fotos.map(urlDaFoto)
+    : [bolo.fotoUrl]
+  ).filter(Boolean)
   const isEncomenda = bolo.categorias.includes('encomenda')
 
   const irFoto = (idx) => {

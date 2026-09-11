@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { buscarCategoriaPorId } from '../../data/categorias'
-import { destaquesPorCategoria } from '../../data/destaques'
+import { destaquesPorCategoria, listarDestaquesBolo } from '../../data/destaques'
 import './DynamicHighlights.css'
 
 const textos = {
@@ -32,10 +33,24 @@ function formatarPreco(valor) {
 }
 
 function DynamicHighlights({ escolhaAtual, onAdicionar }) {
+  const [destaquesBolo, setDestaquesBolo] = useState([])
+  const [carregandoBolo, setCarregandoBolo] = useState(false)
+
+  useEffect(() => {
+    if (escolhaAtual !== 'bolo') return
+    let ativo = true
+    setCarregandoBolo(true)
+    listarDestaquesBolo()
+      .then((data) => { if (ativo) setDestaquesBolo(data) })
+      .catch(() => { if (ativo) setDestaquesBolo([]) })
+      .finally(() => { if (ativo) setCarregandoBolo(false) })
+    return () => { ativo = false }
+  }, [escolhaAtual])
+
   if (!escolhaAtual) return null
 
   const categoria = buscarCategoriaPorId(escolhaAtual)
-  const produtos = destaquesPorCategoria[escolhaAtual] ?? []
+  const produtos = escolhaAtual === 'bolo' ? destaquesBolo : (destaquesPorCategoria[escolhaAtual] ?? [])
   const texto = textos[escolhaAtual]
 
   if (!categoria || !texto) return null
@@ -46,7 +61,9 @@ function DynamicHighlights({ escolhaAtual, onAdicionar }) {
       <h2 className="dynamic-highlights__title">{texto.titulo}</h2>
       <p className="dynamic-highlights__intro">{texto.intro}</p>
 
-      {produtos.length > 0 ? (
+      {escolhaAtual === 'bolo' && carregandoBolo ? (
+        <p className="dynamic-highlights__empty">Carregando destaques...</p>
+      ) : produtos.length > 0 ? (
         <div className="dynamic-highlights__products">
           {produtos.map((produto) => (
             <article className="product-card" key={produto.id}>
@@ -95,7 +112,7 @@ function DynamicHighlights({ escolhaAtual, onAdicionar }) {
         </div>
       ) : (
         <p className="dynamic-highlights__empty">
-          Em breve por aqui.
+          {escolhaAtual === 'bolo' ? 'Nenhum bolo disponível.' : 'Em breve por aqui.'}
         </p>
       )}
 

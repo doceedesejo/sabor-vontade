@@ -1,19 +1,39 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ProdutoCard from '../../components/ProdutoCard/ProdutoCard'
 import ModalProduto from '../../components/ModalProduto/ModalProduto'
 import { useBolosCart } from '../../hooks/useBolosCart'
-import { categorias, listarBolos, listarPorCategoria } from '../../data/bolos'
+import { categorias } from '../../data/filtros'
+import { listarBolosDB } from '../../../services/bolosService'
 import './Vitrine.css'
+
+function filtrarPorCategoria(bolos, categoriaId) {
+  if (!categoriaId || categoriaId === 'todos') return bolos
+  return bolos.filter((b) => b.categorias?.includes(categoriaId))
+}
 
 function Vitrine() {
   const [categoriaAtiva, setCategoriaAtiva] = useState('todos')
   const [boloModal, setBoloModal] = useState(null)
   const [toast, setToast] = useState('')
+  const [bolos, setBolos] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(null)
   const { adicionarItem, totalItens, totalValor } = useBolosCart()
   const navigate = useNavigate()
 
-  const bolosExibidos = listarPorCategoria(categoriaAtiva)
+  useEffect(() => {
+    let ativo = true
+    setCarregando(true)
+    setErro(null)
+    listarBolosDB()
+      .then((data) => { if (ativo) setBolos(data) })
+      .catch((e) => { if (ativo) setErro(e.message) })
+      .finally(() => { if (ativo) setCarregando(false) })
+    return () => { ativo = false }
+  }, [])
+
+  const bolosExibidos = filtrarPorCategoria(bolos, categoriaAtiva)
 
   const handleAdicionar = (bolo, obs = '') => {
     adicionarItem(bolo, obs)
@@ -68,7 +88,19 @@ function Vitrine() {
 
       {/* Grid de produtos */}
       <main className="vitrine__grid">
-        {bolosExibidos.map((bolo) => (
+        {carregando && (
+          <p className="vitrine__vazio">Carregando bolos...</p>
+        )}
+
+        {!carregando && erro && (
+          <p className="vitrine__vazio">Não foi possível carregar os bolos agora. Tente novamente em instantes.</p>
+        )}
+
+        {!carregando && !erro && bolos.length === 0 && (
+          <p className="vitrine__vazio">Nenhum bolo disponível.</p>
+        )}
+
+        {!carregando && !erro && bolos.length > 0 && bolosExibidos.map((bolo) => (
           <ProdutoCard
             key={bolo.id}
             bolo={bolo}
@@ -77,7 +109,7 @@ function Vitrine() {
           />
         ))}
 
-        {bolosExibidos.length === 0 && (
+        {!carregando && !erro && bolos.length > 0 && bolosExibidos.length === 0 && (
           <p className="vitrine__vazio">Nenhum bolo nesta categoria.</p>
         )}
       </main>
