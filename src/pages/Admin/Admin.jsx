@@ -336,43 +336,47 @@ export default function Admin() {
               <label>Categorias</label>
               <div className="admin-modal__cats">
                 {CATEGORIAS_OPCOES.map((cat) => (
-                  <label key={cat.id} className="admin-modal__cat-check">
+                  <div
+                    key={cat.id}
+                    className="admin-modal__cat-check"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const cats = editando.categorias ?? []
+                      const ativo = cats.includes(cat.id)
+                      setEditando((p) => ({
+                        ...p,
+                        categorias: ativo
+                          ? cats.filter((c) => c !== cat.id)
+                          : [...cats, cat.id],
+                      }))
+                    }}
+                  >
                     <input
                       type="checkbox"
+                      readOnly
                       checked={editando.categorias?.includes(cat.id) ?? false}
-                      onChange={(e) => {
-                        const cats = editando.categorias ?? []
-                        setEditando((p) => ({
-                          ...p,
-                          categorias: e.target.checked
-                            ? [...cats, cat.id]
-                            : cats.filter((c) => c !== cat.id),
-                        }))
-                      }}
                     />
                     <span>{cat.nome}</span>
-                  </label>
+                  </div>
                 ))}
               </div>
 
               <label>Opções</label>
               <div className="admin-modal__switches">
-                <label className="admin-modal__switch">
-                  <input
-                    type="checkbox"
-                    checked={editando.disponivel ?? true}
-                    onChange={(e) => setEditando((p) => ({ ...p, disponivel: e.target.checked }))}
-                  />
+                <div
+                  className="admin-modal__switch"
+                  onClick={(e) => { e.stopPropagation(); setEditando((p) => ({ ...p, disponivel: !p.disponivel })) }}
+                >
+                  <input type="checkbox" readOnly checked={editando.disponivel ?? true} />
                   <span>Visível no site</span>
-                </label>
-                <label className="admin-modal__switch">
-                  <input
-                    type="checkbox"
-                    checked={editando.destaque ?? false}
-                    onChange={(e) => setEditando((p) => ({ ...p, destaque: e.target.checked }))}
-                  />
+                </div>
+                <div
+                  className="admin-modal__switch"
+                  onClick={(e) => { e.stopPropagation(); setEditando((p) => ({ ...p, destaque: !p.destaque })) }}
+                >
+                  <input type="checkbox" readOnly checked={editando.destaque ?? false} />
                   <span>Destaque na Home</span>
-                </label>
+                </div>
               </div>
 
               <label>Info extra (encomenda)</label>
