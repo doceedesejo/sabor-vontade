@@ -289,7 +289,7 @@
   display: block;
 }
 
-.admin-modal__body input,
+.admin-modal__body input:not([type="checkbox"]),
 .admin-modal__body textarea,
 .admin-modal__body select {
   width: 100%;
