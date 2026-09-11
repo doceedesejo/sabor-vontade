@@ -10,6 +10,7 @@ import {
 import './Admin.css'
 
 const SENHA_ADMIN = 'docedesejo2025'
+const CHAVE_AUTH = 'admin:auth'
 
 const CATEGORIAS_OPCOES = [
   { id: 'bolo-inteiro', nome: 'Bolo Inteiro' },
@@ -21,7 +22,7 @@ const BOLO_VAZIO = {
   id: '',
   nome: '',
   descricao: '',
-  preco: '',
+  preco: 35,
   tamanho: 'M',
   categorias: ['bolo-inteiro'],
   disponivel: true,
@@ -43,143 +44,162 @@ function slugify(nome) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
+    .slice(0, 40)
 }
 
 export default function Admin() {
-  const [autenticado, setAutenticado] = useState(false)
+  const [autenticado, setAutenticado] = useState(
+    () => localStorage.getItem(CHAVE_AUTH) === 'ok'
+  )
   const [senha, setSenha] = useState('')
   const [erroSenha, setErroSenha] = useState(false)
 
   const [bolos, setBolos] = useState([])
   const [carregando, setCarregando] = useState(false)
-  const [editando, setEditando] = useState(null) // bolo em edição
+  const [editando, setEditando] = useState(null)
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState('')
+  const [tipoMsg, setTipoMsg] = useState('ok')
   const [uploading, setUploading] = useState(false)
   const inputFotoRef = useRef(null)
 
-  // ── Autenticação simples ─────────────────────────────────────────
+  const mostrarMsg = (texto, tipo = 'ok') => {
+    setMsg(texto)
+    setTipoMsg(tipo)
+  }
+
+  useEffect(() => {
+    if (!msg) return
+    const t = setTimeout(() => setMsg(''), 5000)
+    return () => clearTimeout(t)
+  }, [msg])
+
+  useEffect(() => {
+    if (autenticado) carregar()
+  }, [autenticado])
+
   const handleLogin = () => {
     if (senha === SENHA_ADMIN) {
+      localStorage.setItem(CHAVE_AUTH, 'ok')
       setAutenticado(true)
-      carregar()
     } else {
       setErroSenha(true)
     }
   }
 
-  // ── Carregar bolos ───────────────────────────────────────────────
+  const handleLogout = () => {
+    localStorage.removeItem(CHAVE_AUTH)
+    setAutenticado(false)
+  }
+
   const carregar = async () => {
     setCarregando(true)
     try {
       const data = await listarTodosBolosAdmin()
       setBolos(data)
     } catch (e) {
-      setMsg('Erro ao carregar: ' + e.message)
+      mostrarMsg('Erro ao carregar: ' + e.message, 'erro')
     } finally {
       setCarregando(false)
     }
   }
 
-  // ── Salvar bolo ──────────────────────────────────────────────────
   const handleSalvar = async () => {
-    if (!editando.nome) { setMsg('Nome obrigatório'); return }
-
+    if (!editando.nome.trim()) {
+      mostrarMsg('Nome obrigatório', 'erro')
+      return
+    }
     setSalvando(true)
     try {
+      const id = editando.id || slugify(editando.nome)
       const bolo = {
         ...editando,
-        id: editando.id || slugify(editando.nome),
+        id,
         preco: editando.preco ? Number(editando.preco) : null,
       }
       await salvarBolo(bolo)
-      setMsg('✅ Salvo com sucesso!')
-      setEditando(null)
+      // Se criou novo, reabrir em modo edição para poder adicionar fotos
+      if (!editando.id) {
+        mostrarMsg('✅ Bolo salvo! Agora adicione as fotos.')
+        const atualizado = { ...bolo, fotos: [] }
+        setEditando(atualizado)
+      } else {
+        mostrarMsg('✅ Salvo com sucesso!')
+        setEditando(null)
+      }
       await carregar()
     } catch (e) {
-      setMsg('Erro ao salvar: ' + e.message)
+      mostrarMsg('Erro ao salvar: ' + e.message, 'erro')
     } finally {
       setSalvando(false)
     }
   }
 
-  // ── Upload de foto ───────────────────────────────────────────────
   const handleUploadFoto = async (e) => {
     const arquivos = Array.from(e.target.files)
     if (!arquivos.length || !editando?.id) return
-
     setUploading(true)
     try {
+      const novasUrls = []
       for (const arquivo of arquivos) {
         const url = await uploadFoto(editando.id, arquivo)
-        setEditando((prev) => ({
-          ...prev,
-          fotos: [...(prev.fotos ?? []), url],
-        }))
+        novasUrls.push(url)
       }
-      setMsg(`✅ ${arquivos.length} foto(s) enviada(s)`)
+      setEditando((prev) => ({
+        ...prev,
+        fotos: [...(prev.fotos ?? []), ...novasUrls],
+      }))
+      mostrarMsg(`✅ ${arquivos.length} foto(s) enviada(s)`)
     } catch (e) {
-      setMsg('Erro no upload: ' + e.message)
+      mostrarMsg('Erro no upload: ' + e.message, 'erro')
     } finally {
       setUploading(false)
       e.target.value = ''
     }
   }
 
-  // ── Remover foto ─────────────────────────────────────────────────
-  const handleDeletarFoto = async (foto) => {
+  const handleDeletarFoto = async (foto, idx) => {
     if (!confirm('Remover esta foto?')) return
     try {
-      // foto pode ser string (URL) ou objeto {id, url}
+      const url = typeof foto === 'string' ? foto : foto.url
       const id = foto.id
-      const url = foto.url ?? foto
       if (id) await deletarFoto(id, url)
       setEditando((prev) => ({
         ...prev,
-        fotos: prev.fotos.filter((f) => (f.url ?? f) !== (url)),
+        fotos: prev.fotos.filter((_, i) => i !== idx),
       }))
-      setMsg('✅ Foto removida')
-      await carregar()
+      mostrarMsg('✅ Foto removida')
     } catch (e) {
-      setMsg('Erro ao remover foto: ' + e.message)
+      mostrarMsg('Erro: ' + e.message, 'erro')
     }
   }
 
-  // ── Toggle disponível ─────────────────────────────────────────────
   const handleToggle = async (bolo) => {
     try {
       await toggleDisponivel(bolo.id, !bolo.disponivel)
       await carregar()
     } catch (e) {
-      setMsg('Erro: ' + e.message)
+      mostrarMsg('Erro: ' + e.message, 'erro')
     }
   }
 
-  // ── Deletar bolo ──────────────────────────────────────────────────
   const handleDeletar = async (bolo) => {
-    if (!confirm(`Deletar "${bolo.nome}"? Esta ação não pode ser desfeita.`)) return
+    if (!confirm(`Deletar "${bolo.nome}"?`)) return
     try {
       await deletarBolo(bolo.id)
-      setMsg('✅ Bolo removido')
+      mostrarMsg('✅ Bolo removido')
       await carregar()
     } catch (e) {
-      setMsg('Erro: ' + e.message)
+      mostrarMsg('Erro: ' + e.message, 'erro')
     }
   }
 
-  // ── Limpar msg após 4s ────────────────────────────────────────────
-  useEffect(() => {
-    if (!msg) return
-    const t = setTimeout(() => setMsg(''), 4000)
-    return () => clearTimeout(t)
-  }, [msg])
-
-  // ── LOGIN ─────────────────────────────────────────────────────────
   if (!autenticado) {
     return (
       <div className="admin-login">
         <div className="admin-login__card">
-          <h1>🎂 Painel Admin</h1>
+          <div className="admin-login__icon">🎂</div>
+          <h1>Painel Admin</h1>
           <p>Doce &amp; Desejo</p>
           <input
             type="password"
@@ -188,6 +208,7 @@ export default function Admin() {
             onChange={(e) => { setSenha(e.target.value); setErroSenha(false) }}
             onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
             className={erroSenha ? 'erro' : ''}
+            autoFocus
           />
           {erroSenha && <span className="admin-login__erro">Senha incorreta</span>}
           <button onClick={handleLogin}>Entrar</button>
@@ -196,7 +217,6 @@ export default function Admin() {
     )
   }
 
-  // ── PAINEL PRINCIPAL ──────────────────────────────────────────────
   return (
     <div className="admin">
       <header className="admin__header">
@@ -204,12 +224,19 @@ export default function Admin() {
           <h1>🎂 Painel Admin</h1>
           <span>Doce &amp; Desejo</span>
         </div>
-        <button className="admin__btn admin__btn--novo" onClick={() => setEditando({ ...BOLO_VAZIO })}>
-          + Novo bolo
-        </button>
+        <div className="admin__header-acoes">
+          <button className="admin__btn admin__btn--novo" onClick={() => setEditando({ ...BOLO_VAZIO })}>
+            + Novo bolo
+          </button>
+          <button className="admin__btn admin__btn--sair" onClick={handleLogout} title="Sair">
+            Sair
+          </button>
+        </div>
       </header>
 
-      {msg && <div className="admin__msg">{msg}</div>}
+      {msg && (
+        <div className={`admin__msg admin__msg--${tipoMsg}`}>{msg}</div>
+      )}
 
       {carregando ? (
         <div className="admin__loading">Carregando...</div>
@@ -217,39 +244,30 @@ export default function Admin() {
         <div className="admin__lista">
           {bolos.length === 0 && (
             <div className="admin__vazio">
-              Nenhum bolo cadastrado ainda.
-              <br />
+              Nenhum bolo cadastrado ainda.<br />
               Clique em "+ Novo bolo" para começar.
             </div>
           )}
           {bolos.map((bolo) => (
             <div key={bolo.id} className={`admin__item ${!bolo.disponivel ? 'admin__item--inativo' : ''}`}>
-              {/* Foto miniatura */}
               <div
                 className="admin__item-foto"
-                style={{
-                  backgroundImage: bolo.fotos?.[0] ? `url(${bolo.fotos[0]})` : 'none',
-                }}
+                style={{ backgroundImage: bolo.fotos?.[0] ? `url(${bolo.fotos[0]})` : 'none' }}
               >
                 {!bolo.fotos?.[0] && <span>📷</span>}
-                {bolo.fotos?.length > 1 && (
+                {(bolo.fotos?.length ?? 0) > 1 && (
                   <span className="admin__item-foto-count">{bolo.fotos.length}</span>
                 )}
               </div>
-
               <div className="admin__item-info">
                 <b>{bolo.nome}</b>
                 <span>{bolo.preco ? fmt(bolo.preco) : 'A combinar'} · Tam. {bolo.tamanho ?? '-'}</span>
-                <span className="admin__item-cats">
-                  {bolo.categorias?.join(', ')}
-                </span>
+                <span className="admin__item-cats">{bolo.categorias?.join(', ')}</span>
               </div>
-
               <div className="admin__item-acoes">
                 <button
                   className={`admin__toggle ${bolo.disponivel ? 'admin__toggle--on' : 'admin__toggle--off'}`}
                   onClick={() => handleToggle(bolo)}
-                  title={bolo.disponivel ? 'Clique para ocultar' : 'Clique para exibir'}
                 >
                   {bolo.disponivel ? '✅ Visível' : '🚫 Oculto'}
                 </button>
@@ -265,17 +283,15 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── MODAL DE EDIÇÃO ── */}
       {editando && (
-        <div className="admin-modal__overlay" onClick={() => setEditando(null)}>
+        <div className="admin-modal__overlay" onClick={() => !salvando && setEditando(null)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal__header">
-              <h2>{editando.id ? `Editando: ${editando.nome}` : 'Novo bolo'}</h2>
-              <button onClick={() => setEditando(null)}>×</button>
+              <h2>{editando.id ? `Editando: ${editando.nome || 'bolo'}` : 'Novo bolo'}</h2>
+              <button onClick={() => !salvando && setEditando(null)}>×</button>
             </div>
 
             <div className="admin-modal__body">
-              {/* Nome */}
               <label>Nome *</label>
               <input
                 value={editando.nome}
@@ -283,7 +299,6 @@ export default function Admin() {
                 placeholder="Ex: Bolo de Paçoca"
               />
 
-              {/* Descrição */}
               <label>Descrição</label>
               <textarea
                 value={editando.descricao ?? ''}
@@ -292,7 +307,6 @@ export default function Admin() {
                 placeholder="Descreva o bolo..."
               />
 
-              {/* Preço e Tamanho */}
               <div className="admin-modal__row">
                 <div>
                   <label>Preço (R$)</label>
@@ -302,6 +316,7 @@ export default function Admin() {
                     onChange={(e) => setEditando((p) => ({ ...p, preco: e.target.value }))}
                     placeholder="35.00"
                     step="0.01"
+                    inputMode="decimal"
                   />
                 </div>
                 <div>
@@ -318,7 +333,6 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* Categorias */}
               <label>Categorias</label>
               <div className="admin-modal__cats">
                 {CATEGORIAS_OPCOES.map((cat) => (
@@ -336,12 +350,12 @@ export default function Admin() {
                         }))
                       }}
                     />
-                    {cat.nome}
+                    <span>{cat.nome}</span>
                   </label>
                 ))}
               </div>
 
-              {/* Switches */}
+              <label>Opções</label>
               <div className="admin-modal__switches">
                 <label className="admin-modal__switch">
                   <input
@@ -349,7 +363,7 @@ export default function Admin() {
                     checked={editando.disponivel ?? true}
                     onChange={(e) => setEditando((p) => ({ ...p, disponivel: e.target.checked }))}
                   />
-                  Visível no site
+                  <span>Visível no site</span>
                 </label>
                 <label className="admin-modal__switch">
                   <input
@@ -357,61 +371,51 @@ export default function Admin() {
                     checked={editando.destaque ?? false}
                     onChange={(e) => setEditando((p) => ({ ...p, destaque: e.target.checked }))}
                   />
-                  Destaque na Home
+                  <span>Destaque na Home</span>
                 </label>
               </div>
 
-              {/* Info extra */}
-              <label>Info extra (para encomenda)</label>
+              <label>Info extra (encomenda)</label>
               <input
                 value={editando.infoExtra ?? ''}
                 onChange={(e) => setEditando((p) => ({ ...p, infoExtra: e.target.value }))}
                 placeholder="Ex: Prazo mínimo 1 dia..."
               />
 
-              {/* Ordem */}
               <label>Ordem de exibição</label>
               <input
                 type="number"
                 value={editando.ordem ?? 0}
                 onChange={(e) => setEditando((p) => ({ ...p, ordem: Number(e.target.value) }))}
+                inputMode="numeric"
               />
 
-              {/* ── FOTOS ── */}
               <label>Fotos</label>
-
-              {/* Só mostra upload se o bolo já foi salvo (tem ID) */}
               {editando.id ? (
                 <>
                   <div className="admin-modal__fotos">
                     {(editando.fotos ?? []).map((foto, i) => {
                       const url = typeof foto === 'string' ? foto : foto.url
-                      const id = foto.id
                       return (
                         <div key={i} className="admin-modal__foto-thumb">
                           <img src={url} alt={`Foto ${i + 1}`} />
                           <button
                             type="button"
                             className="admin-modal__foto-del"
-                            onClick={() => handleDeletarFoto(foto)}
-                            title="Remover foto"
-                          >
-                            ×
-                          </button>
+                            onClick={() => handleDeletarFoto(foto, i)}
+                          >×</button>
                         </div>
                       )
                     })}
-
                     <button
                       type="button"
                       className="admin-modal__foto-add"
                       onClick={() => inputFotoRef.current?.click()}
                       disabled={uploading}
                     >
-                      {uploading ? 'Enviando...' : '+ Foto'}
+                      {uploading ? '⏳' : '+ Foto'}
                     </button>
                   </div>
-
                   <input
                     ref={inputFotoRef}
                     type="file"
@@ -420,19 +424,15 @@ export default function Admin() {
                     style={{ display: 'none' }}
                     onChange={handleUploadFoto}
                   />
-                  <p className="admin-modal__hint">
-                    Recomendado: fotos quadradas (1:1), mínimo 800×800px
-                  </p>
+                  <p className="admin-modal__hint">Fotos quadradas 1:1, mínimo 800×800px</p>
                 </>
               ) : (
-                <p className="admin-modal__hint">
-                  💡 Salve o bolo primeiro para depois adicionar fotos.
-                </p>
+                <p className="admin-modal__hint">💡 Salve o bolo primeiro e depois adicione as fotos.</p>
               )}
             </div>
 
             <div className="admin-modal__footer">
-              <button className="admin__btn" onClick={() => setEditando(null)}>
+              <button className="admin__btn" onClick={() => !salvando && setEditando(null)}>
                 Cancelar
               </button>
               <button
