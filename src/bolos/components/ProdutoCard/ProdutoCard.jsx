@@ -8,7 +8,7 @@ function ProdutoCard({ bolo, onVerDetalhes, onAdicionar }) {
   const foto = Array.isArray(bolo.fotos) && bolo.fotos.length > 0
     ? urlDaFoto(bolo.fotos[0])
     : bolo.fotoUrl
-  const isEncomenda = bolo.categorias.includes('encomenda')
+  const isEncomenda = bolo.categorias?.includes('encomenda') ?? false
   const totalFotos = bolo.fotos?.length ?? 0
 
   return (

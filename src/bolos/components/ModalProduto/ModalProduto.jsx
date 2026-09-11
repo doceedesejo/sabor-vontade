@@ -23,7 +23,7 @@ function ModalProduto({ bolo, onFechar, onAdicionar }) {
     ? bolo.fotos.map(urlDaFoto)
     : [bolo.fotoUrl]
   ).filter(Boolean)
-  const isEncomenda = bolo.categorias.includes('encomenda')
+  const isEncomenda = bolo.categorias?.includes('encomenda') ?? false
 
   const irFoto = (idx) => {
     setFotoAtual((idx + fotos.length) % fotos.length)
