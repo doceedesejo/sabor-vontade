@@ -305,7 +305,7 @@
 }
 
 .admin-modal__body select { background-image: none; }
-.admin-modal__body textarea { resize: vertical; }
+.admin-modal__body textarea { resize: vertical; min-height: 120px; }
 
 .admin-modal__row {
   display: grid;

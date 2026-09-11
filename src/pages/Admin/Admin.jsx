@@ -307,7 +307,7 @@ export default function Admin() {
               <textarea
                 value={editando.descricao ?? ''}
                 onChange={(e) => setEditando((p) => ({ ...p, descricao: e.target.value }))}
-                rows={3}
+                rows={5}
                 placeholder="Descreva o bolo..."
               />
 
