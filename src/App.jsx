@@ -9,10 +9,14 @@ import AcaiHome from './pages/Acai/AcaiHome'
 import Configurador from './acai/pages/Configurador/Configurador'
 import CarrinhoAcai from './acai/pages/CarrinhoAcai/CarrinhoAcai'
 import Carrinho from './pages/Carrinho/Carrinho'
+import Admin from './pages/Admin/Admin'
 
 function App() {
   return (
     <Routes>
+      {/* Painel admin — sem Layout do site */}
+      <Route path="/admin" element={<Admin />} />
+
       <Route element={<Layout />}>
         <Route index element={<Home />} />
 
@@ -29,7 +33,7 @@ function App() {
           <Route path="carrinho" element={<CarrinhoAcai />} />
         </Route>
 
-        {/* Carrinho unificado (futuro) */}
+        {/* Carrinho unificado */}
         <Route path="carrinho" element={<Carrinho />} />
       </Route>
     </Routes>
