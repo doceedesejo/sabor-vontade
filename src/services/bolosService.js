@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 
-// Usa apenas a anon key — as políticas RLS permitem acesso total.
+// Usa apenas a anon key. Os GRANTs de tabela e as políticas RLS que liberam
+// o acesso total estão em supabase/fix-permissions.sql (rodar no SQL Editor).
 
 export async function listarBolosDB() {
   const { data, error } = await supabase
