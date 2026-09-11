@@ -140,14 +140,14 @@ export default function Admin() {
     if (!arquivos.length || !editando?.id) return
     setUploading(true)
     try {
-      const novasUrls = []
+      const novasFotos = []
       for (const arquivo of arquivos) {
-        const url = await uploadFoto(editando.id, arquivo)
-        novasUrls.push(url)
+        const foto = await uploadFoto(editando.id, arquivo)
+        novasFotos.push(foto)
       }
       setEditando((prev) => ({
         ...prev,
-        fotos: [...(prev.fotos ?? []), ...novasUrls],
+        fotos: [...(prev.fotos ?? []), ...novasFotos],
       }))
       mostrarMsg(`✅ ${arquivos.length} foto(s) enviada(s)`)
     } catch (e) {
@@ -160,10 +160,14 @@ export default function Admin() {
 
   const handleDeletarFoto = async (foto, idx) => {
     if (!confirm('Remover esta foto?')) return
+    const url = typeof foto === 'string' ? foto : foto.url
+    const id = typeof foto === 'string' ? null : foto.id
+    if (!id) {
+      mostrarMsg('Erro: foto sem id, não é possível remover do banco', 'erro')
+      return
+    }
     try {
-      const url = typeof foto === 'string' ? foto : foto.url
-      const id = foto.id
-      if (id) await deletarFoto(id, url)
+      await deletarFoto(id, url)
       setEditando((prev) => ({
         ...prev,
         fotos: prev.fotos.filter((_, i) => i !== idx),
@@ -252,9 +256,9 @@ export default function Admin() {
             <div key={bolo.id} className={`admin__item ${!bolo.disponivel ? 'admin__item--inativo' : ''}`}>
               <div
                 className="admin__item-foto"
-                style={{ backgroundImage: bolo.fotos?.[0] ? `url(${bolo.fotos[0]})` : 'none' }}
+                style={{ backgroundImage: bolo.fotoUrl ? `url(${bolo.fotoUrl})` : 'none' }}
               >
-                {!bolo.fotos?.[0] && <span>📷</span>}
+                {!bolo.fotoUrl && <span>📷</span>}
                 {(bolo.fotos?.length ?? 0) > 1 && (
                   <span className="admin__item-foto-count">{bolo.fotos.length}</span>
                 )}

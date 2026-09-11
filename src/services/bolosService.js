@@ -72,13 +72,17 @@ export async function uploadFoto(boloId, arquivo) {
     .select('*', { count: 'exact', head: true })
     .eq('bolo_id', boloId)
 
-  const { error } = await supabase.from('bolos_fotos').insert({
-    bolo_id: boloId,
-    url: data.publicUrl,
-    ordem: count ?? 0,
-  })
+  const { data: linha, error } = await supabase
+    .from('bolos_fotos')
+    .insert({
+      bolo_id: boloId,
+      url: data.publicUrl,
+      ordem: count ?? 0,
+    })
+    .select('id, url, ordem')
+    .single()
   if (error) throw error
-  return data.publicUrl
+  return linha
 }
 
 export async function deletarFoto(fotoId, url) {
@@ -90,8 +94,9 @@ export async function deletarFoto(fotoId, url) {
 
 function normalizar(row) {
   const fotos = (row.bolos_fotos ?? [])
+    .slice()
     .sort((a, b) => a.ordem - b.ordem)
-    .map((f) => f.url)
+    .map((f) => ({ id: f.id, url: f.url, ordem: f.ordem }))
   return {
     id: row.id,
     nome: row.nome,
@@ -104,7 +109,7 @@ function normalizar(row) {
     infoExtra: row.info_extra,
     video: row.video,
     ordem: row.ordem,
-    fotos: fotos.length > 0 ? fotos : [],
-    fotoUrl: fotos[0] ?? null,
+    fotos,
+    fotoUrl: fotos[0]?.url ?? null,
   }
 }
