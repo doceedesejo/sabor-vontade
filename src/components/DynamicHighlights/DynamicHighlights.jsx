@@ -90,7 +90,9 @@ function DynamicHighlights({ escolhaAtual, onAdicionar }) {
                 </Link>
 
                 <div className="product-card__rodape">
-                  <div className="product-card__price">{formatarPreco(produto.preco)}</div>
+                  <div className="product-card__price">
+                    {produto.preco ? formatarPreco(produto.preco) : 'A combinar'}
+                  </div>
                   <button
                     type="button"
                     className="product-card__add"
