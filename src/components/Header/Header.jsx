@@ -5,9 +5,9 @@ function Header() {
   return (
     <header className="header">
       <Link to="/" className="header__brand">
-        Sabor &amp;
-        <span>Vontade</span>
-        <small>BOLOS · AÇAÍ</small>
+        Doce &amp;
+        <span>Desejo</span>
+        <small>Bolos Artesanais</small>
       </Link>
       <button className="header__menu" aria-label="Abrir menu" type="button">
         <span aria-hidden="true">☰</span>

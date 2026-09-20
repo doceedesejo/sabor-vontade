@@ -14,7 +14,7 @@ export function gerarMensagemBolos(itens, total) {
   const totalLinha = total > 0 ? `\nTotal: ${fmt(total)}` : '\nTotal: a combinar'
 
   return [
-    'Olá! Vim pelo site *Sabor & Vontade* e gostaria de fazer um pedido de bolos:',
+    'Olá! Vim pelo site *Doce & Desejo* e gostaria de fazer um pedido de bolos:',
     '',
     ...linhas,
     totalLinha,
@@ -24,7 +24,7 @@ export function gerarMensagemBolos(itens, total) {
 }
 
 export function gerarMensagemEncomenda(nome) {
-  return `Olá! Vim pelo site *Sabor & Vontade* e gostaria de fazer uma encomenda de: *${nome}*.\n\nPoderia me informar disponibilidade e prazo?`
+  return `Olá! Vim pelo site *Doce & Desejo* e gostaria de fazer uma encomenda de: *${nome}*.\n\nPoderia me informar disponibilidade e prazo?`
 }
 
 export function getLinkWhatsappBolos(itens, total) {

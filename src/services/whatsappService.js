@@ -6,7 +6,7 @@ function formatarPreco(valor) {
 
 export function montarMensagemPedido(itens) {
   if (itens.length === 0) {
-    return 'Olá! Vim pelo site Sabor & Vontade e gostaria de fazer um pedido.'
+    return 'Olá! Vim pelo site Doce & Desejo e gostaria de fazer um pedido.'
   }
 
   const linhas = itens.map(
@@ -16,7 +16,7 @@ export function montarMensagemPedido(itens) {
   const total = itens.reduce((soma, item) => soma + item.precoUnitario * item.quantidade, 0)
 
   return [
-    'Olá! Vim pelo site Sabor & Vontade e gostaria de fazer este pedido:',
+    'Olá! Vim pelo site Doce & Desejo e gostaria de fazer este pedido:',
     '',
     ...linhas,
     '',

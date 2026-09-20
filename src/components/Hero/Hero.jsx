@@ -19,9 +19,9 @@ function Hero({ onVerOpcoes }) {
 
       <header className="hero__header">
         <Link to="/" className="hero__brand">
-          Sabor &amp;
-          <span>Vontade</span>
-          <small>BOLOS · AÇAÍ</small>
+          Doce &amp;
+          <span>Desejo</span>
+          <small>Bolos Artesanais</small>
         </Link>
         <button className="hero__menu" aria-label="Abrir menu" type="button">
           <span aria-hidden="true">☰</span>
