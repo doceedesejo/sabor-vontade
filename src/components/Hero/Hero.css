@@ -1,5 +1,5 @@
 .hero {
-  min-height: 100svh;
+  min-height: 420px;
   position: relative;  /* ponto de referência para todos os filhos absolute */
   background: #080608;
   overflow: hidden;
@@ -91,7 +91,7 @@
 .hero__title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 32px;
+  font-size: 28px;
   line-height: 1.0;
   letter-spacing: -1px;
   margin: 0 0 16px;
