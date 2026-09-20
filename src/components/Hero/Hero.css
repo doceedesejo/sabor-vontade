@@ -188,5 +188,5 @@
 /* ── MOBILE PEQUENO ── */
 @media (max-width: 380px) {
   .hero__copy { right: 35%; top: 20%; }
-  .hero__title { font-size: 34px; }
+  .hero__title { font-size: 28px; }
 }
