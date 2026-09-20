@@ -1,5 +1,5 @@
 .hero {
-  min-height: 500px;
+  min-height: 420px;
   position: relative;  /* ponto de referência para todos os filhos absolute */
   background: #080608;
   overflow: hidden;
